@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎀 Pink & Black Movie Recommender</title>
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #121212;
+      color: #ff69b4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+      user-select: none;
+    }
+    h1 {
+      font-weight: 900;
+      font-size: 3rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #ff69b4cc;
+      letter-spacing: 0.1em;
+    }
+    label {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      display: block;
+      color: #ff85c1;
+      text-shadow: 0 0 5px #ff69b4cc;
+    }
+    select {
+      background: #1c1c1c;
+      color: #ff69b4;
+      border: 2px solid #ff69b4;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      width: 280px;
+      max-width: 100%;
+      user-select: auto;
+    }
+    select:hover, select:focus {
+      border-color: #ff4da6;
+      box-shadow: 0 0 15px #ff4da6aa;
+    }
+    button {
+      margin-top: 20px;
+      padding: 14px 40px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 40px;
+      background: linear-gradient(90deg, #ff4da6, #ff69b4);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 15px #ff4da6cc;
+      transition: background 0.4s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #ff69b4, #ff4da6);
+      box-shadow: 0 6px 20px #ff69b4cc;
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    #recommendations {
+      margin-top: 30px;
+      width: 100%;
+      max-width: 400px;
+      text-align: left;
+      color: #ffb6d9;
+      user-select: auto;
+    }
+    #recommendations h2 {
+      margin-bottom: 15px;
+      font-size: 1.8rem;
+      text-shadow: 0 0 6px #ff69b4bb;
+    }
+    #recommendations ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    #recommendations li {
+      background: #2a2a2a;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 0 8px #ff69b488;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease;
+      cursor: default;
+    }
+    #recommendations li:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 14px #ff4da6cc;
+    }
+    /* Loading Spinner */
+    .spinner {
+      margin: 30px auto;
+      width: 50px;
+      height: 50px;
+      border: 6px solid #ff69b4cc;
+      border-top: 6px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Responsive */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2.2rem;
+      }
+      select, button {
+        width: 100%;
+        font-size: 1rem;
+        padding: 12px 15px;
+      }
+      #recommendations {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎀 Pink & Black Movie Recommender</h1>
+
+  <label for="movie-select">Choose a movie you like:</label>
+  <select id="movie-select" aria-label="Select a movie">
+    <option value="" disabled selected>Select a movie</option>
+    <option value="Toy Story">Toy Story</option>
+    <option value="Jumanji">Jumanji</option>
+    <option value="Grumpier Old Men">Grumpier Old Men</option>
+    <option value="Waiting to Exhale">Waiting to Exhale</option>
+    <option value="Father of the Bride Part II">Father of the Bride Part II</option>
+  </select>
+
+  <button id="recommend-btn" aria-label="Get movie recommendations">Recommend</button>
+
+  <div id="recommendations" role="region" aria-live="polite"></div>
+
+  <script>
+    const recommendBtn = document.getElementById('recommend-btn');
+    const movieSelect = document.getElementById('movie-select');
+    const recommendationsDiv = document.getElementById('recommendations');
+
+    recommendBtn.addEventListener('click', () => {
+      const selectedMovie = movieSelect.value;
+      if (!selectedMovie) {
+        alert('Please select a movie first!');
+        return;
+      }
+
+      recommendationsDiv.innerHTML = '<div class="spinner" aria-label="Loading"></div>';
+
+      fetch('/api/recommend', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ movie: selectedMovie })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.recommendations && data.recommendations.length > 0) {
+          const listItems = data.recommendations
+            .map((rec, i) => `<li>${i + 1}. ${rec}</li>`)
+            .join('');
+          recommendationsDiv.innerHTML = `<h2>You might also like:</h2><ul>${listItems}</ul>`;
+        } else {
+          recommendationsDiv.innerHTML = '<p>No recommendations found.</p>';
+        }
+      })
+      .catch(() => {
+        recommendationsDiv.innerHTML = '<p>Oops! Something went wrong. Try again later.</p>';
+      });
+    });
+  </script>
+
+</body>
+</html>
