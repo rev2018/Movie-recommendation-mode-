@@ -1,0 +1,45 @@
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Load or define movie dataset
+data = {
+    'movieId': [1, 2, 3, 4, 5],
+    'title': ['Toy Story', 'Jumanji', 'Grumpier Old Men', 'Waiting to Exhale', 'Father of the Bride Part II'],
+    'genres': ['Adventure|Animation|Children|Comedy|Fantasy',
+               'Adventure|Children|Fantasy',
+               'Comedy|Romance',
+               'Comedy|Drama|Romance',
+               'Comedy']
+}
+movies = pd.DataFrame(data)
+
+# Preprocess genres
+movies['genres'] = movies['genres'].str.replace('|', ' ')
+
+# Vectorize genres
+count_vect = CountVectorizer()
+genre_matrix = count_vect.fit_transform(movies['genres'])
+
+# Calculate similarity matrix
+cosine_sim = cosine_similarity(genre_matrix, genre_matrix)
+
+def recommend_movies(title, movies=movies, cosine_sim=cosine_sim, top_n=5):
+    if title not in movies['title'].values:
+        return []
+    
+    idx = movies.index[movies['title'] == title][0]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    sim_scores = sim_scores[1:top_n+1]
+    movie_indices = [i[0] for i in sim_scores]
+    
+    return movies['title'].iloc[movie_indices].tolist()
+
+# Example usage:
+if __name__ == "__main__":
+    movie = "Jumanji"
+    recommendations = recommend_movies(movie)
+    print(f"Movies similar to '{movie}':")
+    for i, rec in enumerate(recommendations, 1):
+        print(f"{i}. {rec}")
